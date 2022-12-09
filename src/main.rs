@@ -17,7 +17,6 @@ fn main() {
             println!("{}", input.get(0).unwrap().trim());
             if (input.get(1).unwrap().trim().eq_ignore_ascii_case("*")) {
                 println!("{}", input.get(1).unwrap().trim());
-
                 if (input.get(2).unwrap().trim().eq_ignore_ascii_case("FROM")) {
                     println!("{}", input.get(2).unwrap().trim());
                     print!();
