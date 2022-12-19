@@ -10,6 +10,7 @@ rand = "0.8.5"
 hyper = { version = "*" }
 tokio = { version = "*", features = ["full"]}
 crossbeam = "0.8.2"
+bus = "2.3.0"
 sysinfo = "0.26.8"
 
 [profile.dev]

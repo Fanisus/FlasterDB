@@ -1,81 +1,35 @@
-// Imports //
-use crossbeam;
-use crossbeam::channel::Receiver;
-use crossbeam::channel::Sender;
 use rand::Rng;
-use std::fs;
-use std::io;
 use std::thread;
-use std::time;
+use std::{task, vec};
 use tokio;
-// MAIN //
-// #[tokio::main]
+use tokio::task::JoinHandle;
+use tokio::time::{sleep, Duration, Instant};
+
 fn main() {
-    let (tx, rx) = crossbeam::channel::unbounded();
-    let tx_thread: Sender<threads::Message> = tx.clone();
-    let rx_thread: Receiver<threads::Message> = rx.clone();
-    let rxc = rx.clone();
-
-    threads::create_thread(threads::ThreadType::Reader, tx_thread, rx_thread);
-    listen(rxc)
+    let mut rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(16)
+        .enable_time()
+        .enable_io()
+        .max_blocking_threads(7)
+        .build()
+        .unwrap();
+    thread::sleep(Duration::from_millis(2000));
+    let start = Instant::now();
+    let mut handler = Vec::new();
+    let h = rt.handle();
+    for i in 0..=10000 {
+        let handle = h.spawn(to(start));
+        handler.push(handle);
+        // println!("{:?}", handler)
+    }
+    let end = start.elapsed();
+    thread::sleep(Duration::from_millis(5000));
+    print!("{:?}", end);
 }
-fn listen(rx: Receiver<threads::Message>) {
-    let x = rx.recv().unwrap();
-    let y = x.data;
-    println!("Data from MAin {}", y);
-    listen(rx);
-}
-mod threads {
-    use crossbeam;
-    use std::sync::mpsc;
-    use std::thread;
-    use std::thread::ThreadId;
-    use std::time;
-
-    pub enum ThreadType {
-        Reader,
-        Writer,
-        Connection,
-    }
-    pub struct Message {
-        thread_id: ThreadId,
-        query: String,
-        data: Data
-    }
-    pub enum Data {
-        String(String),
-        Integer(i128)
-    }
-    fn get_type_of<T>(_: &T) -> String {
-        std::any::type_name::<T>().to_string()
-    }
-    pub fn create_thread(
-        thread_type: ThreadType,
-        ThreadTx: crossbeam::channel::Sender<Message>,
-        ThreadRx: crossbeam::channel::Receiver<Message>,
-    ) {
-        match thread_type {
-            ThreadType::Reader => {
-                thread::spawn(move || {
-                    thread::sleep(time::Duration::from_millis(1000));
-                    let result = String::from("hi");
-                    println!("Thread {:?}", thread::current().id().to_owned());
-                    match get_type_of(&result).as_str() {
-                        "String" => {
-                            let data = Message {
-                                thread_id: thread::current().id().to_owned(),
-                                data: Data::String(result),
-                                query: "hi".to_string()
-                            };
-                            ThreadTx.send(data).unwrap();
-                        },
-
-                    }
-                    for i in 0..10 {
-                    }
-                });
-            }
-            _ => {}
-        }
-    }
+async fn to(s: Instant) {
+    let mut random = rand::thread_rng().gen_range(1000..2000);
+    let task = sleep(Duration::from_millis(random)).await;
+    // let task = thread::sleep(Duration::from_millis(random));
+    println!("Time: {}, Time Taken: {:?}", random, s.elapsed());
+    // println!("{:?}", s.elapsed());
 }
