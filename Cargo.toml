@@ -11,7 +11,8 @@ hyper = { version = "*" }
 tokio = { version = "*", features = ["full"]}
 crossbeam = "0.8.2"
 bus = "2.3.0"
-sysinfo = "0.26.8"
+sysinfo = "0.27.7"
+
 
 [profile.dev]
 opt-level = 0

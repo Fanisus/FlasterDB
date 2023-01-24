@@ -1,35 +1,39 @@
-use rand::Rng;
-use std::thread;
-use std::{task, vec};
-use tokio;
-use tokio::task::JoinHandle;
-use tokio::time::{sleep, Duration, Instant};
+#![allow(unused_imports)]
+#![allow(non_snake_case)]
 
+use std::thread;
+use sysinfo::{CpuExt, NetworkExt, NetworksExt, ProcessExt, System, SystemExt};
+use tokio::{fs, io, runtime, sync, time};
 fn main() {
-    let mut rt = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(16)
-        .enable_time()
-        .enable_io()
-        .max_blocking_threads(7)
-        .build()
-        .unwrap();
-    thread::sleep(Duration::from_millis(2000));
-    let start = Instant::now();
-    let mut handler = Vec::new();
-    let h = rt.handle();
-    for i in 0..=10000 {
-        let handle = h.spawn(to(start));
-        handler.push(handle);
-        // println!("{:?}", handler)
+    // let rt = runtime::Builder::new_multi_thread()
+    //     .enable_io()
+    //     .enable_time()
+    //     .worker_threads(128)
+    //     .build()
+    //     .unwrap();
+    // let mut count = 0;
+    // let mut handler = Vec::new();
+    // let h = rt.handle();
+    // for _i in 0..1000 {
+    //     let handle = h.spawn(async move {
+    //         time::sleep(time::Duration::from_secs(1)).await;
+    //     });
+    //     handler.push(handle);
+    // }
+    let mut sys = sysinfo::System::new();
+    loop {
+        sys.refresh_all();
+        // RAM and swap information:
+        println!(
+            "Memory: {:.2}GB/{:.2}GB",
+            sys.used_memory() as f32 / 1073741824 as f32,
+            sys.total_memory() as f32 / 1073741824 as f32
+        );
+        // Number of CPUs:
+        for cpu in sys.cpus() {
+            print!("{:.2}% ", cpu.cpu_usage());
+        }
+        println!("\n");
+        std::thread::sleep(std::time::Duration::from_millis(1000));
     }
-    let end = start.elapsed();
-    thread::sleep(Duration::from_millis(5000));
-    print!("{:?}", end);
-}
-async fn to(s: Instant) {
-    let mut random = rand::thread_rng().gen_range(1000..2000);
-    let task = sleep(Duration::from_millis(random)).await;
-    // let task = thread::sleep(Duration::from_millis(random));
-    println!("Time: {}, Time Taken: {:?}", random, s.elapsed());
-    // println!("{:?}", s.elapsed());
 }
